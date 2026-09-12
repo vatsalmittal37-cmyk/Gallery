@@ -24,6 +24,9 @@ jobs:
 
       - name: Build APK with Buildozer
         run: |
+          buildozer init
+          sed -i 's/android.api = 27/android.api = 33/g' buildozer.spec
+          sed -i 's/#android.accept_sdk_license = False/android.accept_sdk_license = True/g' buildozer.spec
           buildozer android debug
 
       - name: Upload APK Artifact
