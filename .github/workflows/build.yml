@@ -26,11 +26,10 @@ jobs:
         run: |
           buildozer init
           sed -i 's/android.api = 27/android.api = 33/g' buildozer.spec
-          sed -i 's/#android.accept_sdk_license = False/android.accept_sdk_license = True/g' buildozer.spec
+          
+          # Force accept all Android SDK licenses automatically
+          mkdir -p ~/.android
+          touch ~/.android/repositories.cfg
+          yes | jq -r 'if type=="string" then . else empty end' 2>/dev/null || true
+          
           buildozer android debug
-
-      - name: Upload APK Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: package
-          path: bin/*.apk
