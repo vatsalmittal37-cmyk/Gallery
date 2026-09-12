@@ -5,17 +5,27 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Android SDK and Accept Licenses
+        uses: android-actions/setup-android@v3
+
       - name: Install System Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
+          sudo apt-get install -y git zip unzip python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
 
       - name: Install Buildozer and Cython
         run: |
@@ -25,11 +35,15 @@ jobs:
       - name: Build APK with Buildozer
         run: |
           buildozer init
+          # Force the configuration file to use the correct API and settings
           sed -i 's/android.api = 27/android.api = 33/g' buildozer.spec
+          sed -i 's/#android.accept_sdk_license = False/android.accept_sdk_license = True/g' buildozer.spec
           
-          # Force accept all Android SDK licenses automatically
-          mkdir -p ~/.android
-          touch ~/.android/repositories.cfg
-          yes | jq -r 'if type=="string" then . else empty end' 2>/dev/null || true
-          
+          # Run the main compiler command
           buildozer android debug
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: package
+          path: bin/*.apk
