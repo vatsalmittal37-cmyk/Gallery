@@ -35,11 +35,19 @@ jobs:
       - name: Build APK with Buildozer
         run: |
           buildozer init
-          # Force the configuration file to use the correct API and settings
+          
+          # Force the configuration file to use the pre-downloaded SDK settings
           sed -i 's/android.api = 27/android.api = 33/g' buildozer.spec
+          sed -i "s|#android.sdk_path =|android.sdk_path = $ANDROID_HOME|g" buildozer.spec
+          sed -i "s|#android.ndk_path =|android.ndk_path = $ANDROID_HOME/ndk-bundle|g" buildozer.spec
           sed -i 's/#android.accept_sdk_license = False/android.accept_sdk_license = True/g' buildozer.spec
           
-          # Run the main compiler command
+          # Force local acceptance into buildozer's specific internal folder just in case
+          mkdir -p ~/.buildozer/android/platform/android-sdk/licenses
+          cp -r $ANDROID_HOME/licenses/* ~/.buildozer/android/platform/android-sdk/licenses/ || true
+          
+          # Run the main compiler command with forced environment paths
+          export ANDROIDSDK=$ANDROID_HOME
           buildozer android debug
 
       - name: Upload APK Artifact
